@@ -1,0 +1,115 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspberry Pi Monitor</title>
+    <!-- Inclui o Tailwind CSS via CDN para estilização rápida -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Animação suave para as barras de progresso */
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-cyan-400">Painel de Controle - Raspberry Pi</h1>
+            <p class="text-gray-400 mt-2">Monitoramento de recursos do sistema em tempo real</p>
+        </header>
+
+        <!-- Grid para os cartões de estatísticas -->
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Card: Temperatura da CPU -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-300">Temperatura da CPU</h2>
+                    <p id="cpu-temp" class="text-5xl font-bold text-white mt-2">--</p>
+                </div>
+                <div class="text-sm text-cyan-400 mt-4">Essencial para a saúde do hardware</div>
+            </div>
+
+            <!-- Card: Uso da CPU -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-lg font-semibold text-gray-300">Uso da CPU</h2>
+                <p class="text-5xl font-bold text-white mt-2"><span id="cpu-usage">--</span>%</p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4">
+                    <div id="cpu-progress" class="bg-cyan-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Card: Uso de Memória RAM -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-lg font-semibold text-gray-300">Uso de Memória (RAM)</h2>
+                <p class="text-3xl font-bold text-white mt-2">
+                    <span id="mem-used">--</span> / <span id="mem-total">--</span>
+                </p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4">
+                    <div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                </div>
+                <p class="text-right text-lg font-medium mt-2"><span id="mem-percent">--</span>%</p>
+            </div>
+
+            <!-- Card: Uso de Armazenamento -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg md:col-span-2 lg:col-span-3">
+                <h2 class="text-lg font-semibold text-gray-300">Uso de Armazenamento (Disco)</h2>
+                 <p class="text-3xl font-bold text-white mt-2">
+                    <span id="disk-used">--</span> / <span id="disk-total">--</span>
+                </p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4">
+                    <div id="disk-progress" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                </div>
+                <p class="text-right text-lg font-medium mt-2"><span id="disk-percent">--</span>%</p>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Função para buscar os dados da API e atualizar a página
+        async function updateStats() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+
+                // Atualiza os elementos do DOM com os novos dados
+                document.getElementById('cpu-temp').textContent = data.cpu_temp;
+                document.getElementById('cpu-usage').textContent = data.cpu_usage.toFixed(1);
+                document.getElementById('cpu-progress').style.width = data.cpu_usage + '%';
+
+                document.getElementById('mem-used').textContent = data.mem_used;
+                document.getElementById('mem-total').textContent = data.mem_total;
+                document.getElementById('mem-percent').textContent = data.mem_percent.toFixed(1);
+                document.getElementById('mem-progress').style.width = data.mem_percent + '%';
+
+                document.getElementById('disk-used').textContent = data.disk_used;
+                document.getElementById('disk-total').textContent = data.disk_total;
+                document.getElementById('disk-percent').textContent = data.disk_percent.toFixed(1);
+                document.getElementById('disk-progress').style.width = data.disk_percent + '%';
+
+            } catch (error) {
+                console.error("Erro ao buscar estatísticas:", error);
+                // Você pode adicionar uma mensagem de erro na UI aqui
+            }
+        }
+
+        // Chama a função de atualização a cada 2 segundos (2000 ms)
+        setInterval(updateStats, 2000);
+
+        // Chama a função uma vez no carregamento da página para exibir os dados iniciais rapidamente
+        window.onload = updateStats;
+    </script>
+
+</body>
+</html>

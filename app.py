@@ -53,14 +53,20 @@ def get_uptime():
 
 def get_listening_ports():
     """
-    Obtém uma lista de portas em escuta, com o processo associado.
-    Nota: Esta operação pode ser um pouco lenta em sistemas com muitos processos.
+    Obtém uma lista de portas em escuta, com o processo associado, sem duplicatas.
     """
     connections = psutil.net_connections(kind='inet')
-    listening_ports = []
+    listening_ports_map = {}  # Usar um dicionário para evitar duplicatas
+
     for conn in connections:
         if conn.status == 'LISTEN':
+            port = conn.laddr.port
+            # Se a porta já foi adicionada, pule para evitar duplicatas (ex: IPv4 e IPv6)
+            if port in listening_ports_map:
+                continue
+
             proc_name = 'N/A'
+            pid = conn.pid or 'N/A'
             try:
                 if conn.pid:
                     proc = psutil.Process(conn.pid)
@@ -68,13 +74,23 @@ def get_listening_ports():
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 proc_name = 'Acesso Negado'
 
-            listening_ports.append({
-                'port': conn.laddr.port,
+            listening_ports_map[port] = {
                 'protocol': 'TCP' if conn.type == 1 else 'UDP',
                 'process': proc_name,
-                'pid': conn.pid or 'N/A'
-            })
-    return listening_ports
+                'pid': pid
+            }
+
+    # Converte o dicionário de volta para uma lista de objetos
+    final_list = []
+    for port, data in listening_ports_map.items():
+        final_list.append({
+            'port': port,
+            'protocol': data['protocol'],
+            'process': data['process'],
+            'pid': data['pid']
+        })
+
+    return final_list
 
 
 # Rota principal que renderiza a página HTML

@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # --- DEFINIÇÃO DOS LIMITES DE TEMPERATURA ---
 # Você pode ajustar estes valores conforme sua necessidade
-TEMP_WARNING = 65.0  # Temperatura em °C para alerta amarelo
+TEMP_WARNING = 70.0  # Temperatura em °C para alerta amarelo
 TEMP_CRITICAL = 75.0  # Temperatura em °C para alerta vermelho
 
 

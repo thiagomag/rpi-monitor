@@ -5,14 +5,60 @@ import psutil
 import os
 import datetime
 import time
+import docker  # Nova importação para comunicar com o Docker
 
 # Inicializa a aplicação Flask
 app = Flask(__name__)
 
+# --- INICIALIZAÇÃO DO CLIENTE DOCKER ---
+# E um cache simples para informações de contêineres para não sobrecarregar a API do Docker
+try:
+    # Tenta conectar ao Docker usando o socket do ambiente
+    docker_client = docker.from_env()
+    container_info_cache = {}
+    CACHE_EXPIRATION = 10  # segundos
+except docker.errors.DockerException:
+    # Se o socket do Docker não estiver disponível, o cliente será None
+    docker_client = None
+
 # --- DEFINIÇÃO DOS LIMITES DE TEMPERATURA ---
-# Você pode ajustar estes valores conforme sua necessidade
-TEMP_WARNING = 70.0  # Temperatura em °C para alerta amarelo
+TEMP_WARNING = 65.0  # Temperatura em °C para alerta amarelo
 TEMP_CRITICAL = 75.0  # Temperatura em °C para alerta vermelho
+
+
+def get_container_name_from_port(port):
+    """
+    Verifica qual contêiner está expondo uma determinada porta.
+    Usa um cache para melhorar o desempenho.
+    """
+    global container_info_cache
+    if not docker_client:
+        return None
+
+    # Verifica se o cache é válido
+    now = time.time()
+    if 'timestamp' in container_info_cache and (now - container_info_cache['timestamp']) < CACHE_EXPIRATION:
+        return container_info_cache.get(port)
+
+    # Se o cache expirou ou não existe, recria
+    container_info_cache = {'timestamp': now}
+    try:
+        for container in docker_client.containers.list():
+            ports = container.attrs.get('HostConfig', {}).get('PortBindings')
+            if ports:
+                for container_port, host_bindings in ports.items():
+                    if host_bindings:
+                        for binding in host_bindings:
+                            host_port = binding.get('HostPort')
+                            if host_port and int(host_port) == port:
+                                # Cacheia a informação [porta] -> [nome do container]
+                                container_info_cache[port] = container.name
+                                break
+    except Exception:
+        # Em caso de erro na comunicação com o Docker, retorna None
+        return None
+
+    return container_info_cache.get(port)
 
 
 def get_cpu_temperature():
@@ -54,6 +100,7 @@ def get_uptime():
 def get_listening_ports():
     """
     Obtém uma lista de portas em escuta, com o processo associado, sem duplicatas.
+    Tenta identificar o contêiner por trás do docker-proxy.
     """
     connections = psutil.net_connections(kind='inet')
     listening_ports_map = {}  # Usar um dicionário para evitar duplicatas
@@ -61,7 +108,6 @@ def get_listening_ports():
     for conn in connections:
         if conn.status == 'LISTEN':
             port = conn.laddr.port
-            # Se a porta já foi adicionada, pule para evitar duplicatas (ex: IPv4 e IPv6)
             if port in listening_ports_map:
                 continue
 
@@ -69,8 +115,19 @@ def get_listening_ports():
             pid = conn.pid or 'N/A'
             try:
                 if conn.pid:
-                    proc = psutil.Process(conn.pid)
-                    proc_name = proc.name()
+                    p = psutil.Process(conn.pid)
+                    proc_name = p.name()
+
+                    # --- NOVA LÓGICA PARA IDENTIFICAR O CONTÊINER ---
+                    if proc_name == 'docker-proxy':
+                        container_name = get_container_name_from_port(port)
+                        if container_name:
+                            # Se encontrarmos o contêiner, mostramos seu nome!
+                            proc_name = f"Contêiner: {container_name}"
+                        else:
+                            # Se não, apenas dizemos que é um proxy do Docker
+                            proc_name = "Docker Proxy"
+
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 proc_name = 'Acesso Negado'
 

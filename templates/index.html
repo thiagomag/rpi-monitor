@@ -5,111 +5,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Raspberry Pi Monitor</title>
-    <!-- Inclui o Tailwind CSS via CDN para estilização rápida -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Animação suave para as barras de progresso */
-        .progress-bar {
-            transition: width 0.5s ease-in-out;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .progress-bar { transition: width 0.5s ease-in-out; }
+        .card { transition: background-color 0.5s ease-in-out, border-color 0.5s ease-in-out; }
+        .table-auto th, .table-auto td { @apply px-4 py-2; }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4 sm:p-6">
 
-    <div class="w-full max-w-4xl mx-auto">
+    <div class="w-full max-w-6xl mx-auto">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-cyan-400">Painel de Controle - Raspberry Pi</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-cyan-400">Painel de Controle - Raspberry Pi</h1>
             <p class="text-gray-400 mt-2">Monitoramento de recursos do sistema em tempo real</p>
         </header>
 
-        <!-- Grid para os cartões de estatísticas -->
-        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Card: Temperatura da CPU -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col justify-between">
+            <div id="temp-card" class="card bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col justify-between border-2 border-transparent">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-300">Temperatura da CPU</h2>
+                    <div class="flex justify-between items-center"><h2 class="text-lg font-semibold text-gray-300">Temperatura</h2><span id="temp-status-icon" class="text-2xl"></span></div>
                     <p id="cpu-temp" class="text-5xl font-bold text-white mt-2">--</p>
                 </div>
-                <div class="text-sm text-cyan-400 mt-4">Essencial para a saúde do hardware</div>
+                <div id="temp-status-text" class="text-sm font-medium mt-4">Status: Verificando...</div>
             </div>
 
             <!-- Card: Uso da CPU -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
                 <h2 class="text-lg font-semibold text-gray-300">Uso da CPU</h2>
                 <p class="text-5xl font-bold text-white mt-2"><span id="cpu-usage">--</span>%</p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4">
-                    <div id="cpu-progress" class="bg-cyan-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
-                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="cpu-progress" class="bg-cyan-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
             </div>
 
             <!-- Card: Uso de Memória RAM -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-lg font-semibold text-gray-300">Uso de Memória (RAM)</h2>
-                <p class="text-3xl font-bold text-white mt-2">
-                    <span id="mem-used">--</span> / <span id="mem-total">--</span>
-                </p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4">
-                    <div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
-                </div>
+                <h2 class="text-lg font-semibold text-gray-300">Memória (RAM)</h2>
+                <p class="text-2xl font-bold text-white mt-2"><span id="mem-used">--</span> / <span id="mem-total">--</span></p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
                 <p class="text-right text-lg font-medium mt-2"><span id="mem-percent">--</span>%</p>
             </div>
 
+            <!-- Card: Uso de Memória SWAP -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-lg font-semibold text-gray-300">Memória (Swap)</h2>
+                <p class="text-2xl font-bold text-white mt-2"><span id="swap-used">--</span> / <span id="swap-total">--</span></p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="swap-progress" class="bg-orange-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
+                <p class="text-right text-lg font-medium mt-2"><span id="swap-percent">--</span>%</p>
+            </div>
+
             <!-- Card: Uso de Armazenamento -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg md:col-span-2 lg:col-span-3">
-                <h2 class="text-lg font-semibold text-gray-300">Uso de Armazenamento (Disco)</h2>
-                 <p class="text-3xl font-bold text-white mt-2">
-                    <span id="disk-used">--</span> / <span id="disk-total">--</span>
-                </p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4">
-                    <div id="disk-progress" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
-                </div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2">
+                <h2 class="text-lg font-semibold text-gray-300">Armazenamento (Disco)</h2>
+                 <p class="text-3xl font-bold text-white mt-2"><span id="disk-used">--</span> / <span id="disk-total">--</span></p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="disk-progress" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
                 <p class="text-right text-lg font-medium mt-2"><span id="disk-percent">--</span>%</p>
             </div>
 
+            <!-- Card: Informações do Sistema -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-lg font-semibold text-gray-300 mb-3">Info Sistema</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span>Tempo Ativo:</span> <strong id="uptime">--</strong></div>
+                    <div class="flex justify-between"><span>Processos:</span> <strong id="processes">--</strong></div>
+                </div>
+            </div>
+
+            <!-- Card: Carga Média -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-lg font-semibold text-gray-300 mb-3">Carga Média (Load)</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span>Último 1 min:</span> <strong id="load-1">--</strong></div>
+                    <div class="flex justify-between"><span>Últimos 5 min:</span> <strong id="load-5">--</strong></div>
+                    <div class="flex justify-between"><span>Últimos 15 min:</span> <strong id="load-15">--</strong></div>
+                </div>
+            </div>
+
+            <!-- Card: Rede -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2">
+                <h2 class="text-lg font-semibold text-gray-300 mb-3">Tráfego de Rede</h2>
+                <div class="flex justify-around items-center text-center mt-4">
+                    <div>
+                        <p class="text-sm text-gray-400">Enviado</p>
+                        <p id="net-sent" class="text-2xl font-bold text-red-400">--</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Recebido</p>
+                        <p id="net-recv" class="text-2xl font-bold text-green-400">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela: Portas em Escuta -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4">
+                <h2 class="text-lg font-semibold text-gray-300 mb-4">Portas em Escuta (Listening)</h2>
+                <div class="overflow-x-auto max-h-60">
+                    <table class="table-auto w-full text-left">
+                        <thead class="sticky top-0 bg-gray-800">
+                            <tr><th>Porta</th><th>Protocolo</th><th>Aplicação</th><th>PID</th></tr>
+                        </thead>
+                        <tbody id="ports-table-body">
+                           <!-- Linhas serão inseridas aqui via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </main>
     </div>
 
     <script>
-        // Função para buscar os dados da API e atualizar a página
         async function updateStats() {
             try {
                 const response = await fetch('/stats');
                 const data = await response.json();
 
-                // Atualiza os elementos do DOM com os novos dados
+                // Temperatura
+                const tempCard = document.getElementById('temp-card');
+                tempCard.classList.remove('bg-yellow-900', 'border-yellow-500', 'bg-red-900', 'border-red-500');
+                if (data.cpu_temp_raw === null) {
+                    document.getElementById('temp-status-text').textContent = 'Status: Erro na leitura';
+                    document.getElementById('temp-status-icon').textContent = '⚠️';
+                } else if (data.cpu_temp_raw >= data.temp_limits.critical) {
+                    tempCard.classList.add('bg-red-900', 'border-red-500');
+                    document.getElementById('temp-status-text').textContent = `Status: Crítico!`;
+                    document.getElementById('temp-status-icon').textContent = '🔥';
+                } else if (data.cpu_temp_raw >= data.temp_limits.warning) {
+                    tempCard.classList.add('bg-yellow-900', 'border-yellow-500');
+                    document.getElementById('temp-status-text').textContent = `Status: Atenção`;
+                    document.getElementById('temp-status-icon').textContent = '⚠️';
+                } else {
+                    document.getElementById('temp-status-text').textContent = 'Status: Normal';
+                    document.getElementById('temp-status-icon').textContent = '✅';
+                }
                 document.getElementById('cpu-temp').textContent = data.cpu_temp;
+
+                // CPU
                 document.getElementById('cpu-usage').textContent = data.cpu_usage.toFixed(1);
                 document.getElementById('cpu-progress').style.width = data.cpu_usage + '%';
 
+                // RAM
                 document.getElementById('mem-used').textContent = data.mem_used;
                 document.getElementById('mem-total').textContent = data.mem_total;
                 document.getElementById('mem-percent').textContent = data.mem_percent.toFixed(1);
                 document.getElementById('mem-progress').style.width = data.mem_percent + '%';
 
+                // SWAP
+                document.getElementById('swap-used').textContent = data.swap_used;
+                document.getElementById('swap-total').textContent = data.swap_total;
+                document.getElementById('swap-percent').textContent = data.swap_percent.toFixed(1);
+                document.getElementById('swap-progress').style.width = data.swap_percent + '%';
+
+                // Disco
                 document.getElementById('disk-used').textContent = data.disk_used;
                 document.getElementById('disk-total').textContent = data.disk_total;
                 document.getElementById('disk-percent').textContent = data.disk_percent.toFixed(1);
                 document.getElementById('disk-progress').style.width = data.disk_percent + '%';
 
+                // Info Sistema
+                document.getElementById('uptime').textContent = data.uptime;
+                document.getElementById('processes').textContent = data.processes;
+
+                // Carga Média
+                document.getElementById('load-1').textContent = data.load_avg.min1.toFixed(2);
+                document.getElementById('load-5').textContent = data.load_avg.min5.toFixed(2);
+                document.getElementById('load-15').textContent = data.load_avg.min15.toFixed(2);
+
+                // Rede
+                document.getElementById('net-sent').textContent = data.net_sent;
+                document.getElementById('net-recv').textContent = data.net_recv;
+
+                // Tabela de Portas
+                const portsTableBody = document.getElementById('ports-table-body');
+                portsTableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novas linhas
+                if (data.listening_ports.length === 0) {
+                    portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta encontrada.</td></tr>';
+                } else {
+                    data.listening_ports.forEach(p => {
+                        const row = `<tr>
+                            <td>${p.port}</td>
+                            <td>${p.protocol}</td>
+                            <td class="truncate" title="${p.process}">${p.process}</td>
+                            <td>${p.pid}</td>
+                        </tr>`;
+                        portsTableBody.innerHTML += row;
+                    });
+                }
+
             } catch (error) {
                 console.error("Erro ao buscar estatísticas:", error);
-                // Você pode adicionar uma mensagem de erro na UI aqui
             }
         }
 
-        // Chama a função de atualização a cada 2 segundos (2000 ms)
         setInterval(updateStats, 2000);
-
-        // Chama a função uma vez no carregamento da página para exibir os dados iniciais rapidamente
         window.onload = updateStats;
     </script>
-
 </body>
 </html>

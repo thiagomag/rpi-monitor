@@ -22,7 +22,7 @@ except docker.errors.DockerException:
     docker_client = None
 
 # --- DEFINIÇÃO DOS LIMITES DE TEMPERATURA ---
-TEMP_WARNING = 65.0  # Temperatura em °C para alerta amarelo
+TEMP_WARNING = 70.0  # Temperatura em °C para alerta amarelo
 TEMP_CRITICAL = 75.0  # Temperatura em °C para alerta vermelho
 
 

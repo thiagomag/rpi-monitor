@@ -1,0 +1,14 @@
+services:
+  rpi-monitor:
+    container_name: rpi-monitor
+    image: thiagomag/rpi-monitor
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - rpi-network
+    restart: unless-stopped
+
+networks:
+  rpi-network:
+    external: true

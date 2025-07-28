@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    expose:
-      - 5000:5000
+    ports:
+      - "5000:5000"
     networks:
       - rpi-network
     restart: unless-stopped

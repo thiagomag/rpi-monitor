@@ -119,90 +119,117 @@
     </div>
 
     <script>
+        // Função auxiliar para atualizar o texto de um elemento de forma segura
+        function safeSetText(id, text) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = text;
+            } else {
+                console.warn(`[Monitor] Elemento com ID '${id}' não foi encontrado.`);
+            }
+        }
+
+        // Função auxiliar para atualizar a largura de uma barra de progresso de forma segura
+        function safeSetWidth(id, percentage) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.width = percentage + '%';
+            } else {
+                console.warn(`[Monitor] Elemento com ID '${id}' não foi encontrado.`);
+            }
+        }
+
         async function updateStats() {
             try {
-                const response = await fetch('/stats');
+                // CORREÇÃO: Construir a URL completa para a chamada fetch.
+                const statsUrl = `${window.location.protocol}//${window.location.hostname}:5000/stats`;
+                const response = await fetch(statsUrl);
+
+                if (!response.ok) {
+                    console.error("Erro na resposta do servidor:", response.status, response.statusText);
+                    return;
+                }
                 const data = await response.json();
 
                 // --- Seção de Temperatura ---
                 const tempCard = document.getElementById('temp-card');
-                tempCard.classList.remove('bg-yellow-900', 'border-yellow-500', 'bg-red-900', 'border-red-500');
-                if (data.cpu_temp_raw === null) {
-                    document.getElementById('temp-status-text').textContent = 'Status: Erro';
-                    document.getElementById('temp-status-icon').textContent = '⚠️';
-                } else if (data.cpu_temp_raw >= data.temp_limits.critical) {
-                    tempCard.classList.add('bg-red-900', 'border-red-500');
-                    document.getElementById('temp-status-text').textContent = `Status: Crítico!`;
-                    document.getElementById('temp-status-icon').textContent = '🔥';
-                } else if (data.cpu_temp_raw >= data.temp_limits.warning) {
-                    tempCard.classList.add('bg-yellow-900', 'border-yellow-500');
-                    document.getElementById('temp-status-text').textContent = `Status: Atenção`;
-                    document.getElementById('temp-status-icon').textContent = '⚠️';
-                } else {
-                    document.getElementById('temp-status-text').textContent = 'Status: Normal';
-                    document.getElementById('temp-status-icon').textContent = '✅';
+                if (tempCard) {
+                    tempCard.classList.remove('bg-yellow-900', 'border-yellow-500', 'bg-red-900', 'border-red-500');
+                    if (data.cpu_temp_raw === null) {
+                        safeSetText('temp-status-text', 'Status: Erro');
+                        safeSetText('temp-status-icon', '⚠️');
+                    } else if (data.cpu_temp_raw >= data.temp_limits.critical) {
+                        tempCard.classList.add('bg-red-900', 'border-red-500');
+                        safeSetText('temp-status-text', `Status: Crítico!`);
+                        safeSetText('temp-status-icon', '🔥');
+                    } else if (data.cpu_temp_raw >= data.temp_limits.warning) {
+                        tempCard.classList.add('bg-yellow-900', 'border-yellow-500');
+                        safeSetText('temp-status-text', `Status: Atenção`);
+                        safeSetText('temp-status-icon', '⚠️');
+                    } else {
+                        safeSetText('temp-status-text', 'Status: Normal');
+                        safeSetText('temp-status-icon', '✅');
+                    }
                 }
-                document.getElementById('cpu-temp').textContent = data.cpu_temp;
+                safeSetText('cpu-temp', data.cpu_temp);
 
                 // --- Outras Métricas ---
-                document.getElementById('cpu-usage').textContent = data.cpu_usage.toFixed(1);
-                document.getElementById('cpu-progress').style.width = data.cpu_usage + '%';
-                document.getElementById('mem-used').textContent = data.mem_used;
-                document.getElementById('mem-total').textContent = data.mem_total;
-                document.getElementById('mem-percent').textContent = data.mem_percent.toFixed(1);
-                document.getElementById('mem-progress').style.width = data.mem_percent + '%';
-                document.getElementById('swap-used').textContent = data.swap_used;
-                document.getElementById('swap-total').textContent = data.swap_total;
-                document.getElementById('swap-percent').textContent = data.swap_percent.toFixed(1);
-                document.getElementById('swap-progress').style.width = data.swap_percent + '%';
-                document.getElementById('disk-used').textContent = data.disk_used;
-                document.getElementById('disk-total').textContent = data.disk_total;
-                document.getElementById('disk-percent').textContent = data.disk_percent.toFixed(1);
-                document.getElementById('disk-progress').style.width = data.disk_percent + '%';
-                document.getElementById('uptime').textContent = data.uptime;
-                document.getElementById('processes').textContent = data.processes;
-                document.getElementById('load-1').textContent = data.load_avg.min1.toFixed(2);
-                document.getElementById('load-5').textContent = data.load_avg.min5.toFixed(2);
-                document.getElementById('load-15').textContent = data.load_avg.min15.toFixed(2);
-                document.getElementById('net-sent').textContent = data.net_sent;
-                document.getElementById('net-recv').textContent = data.net_recv;
+                safeSetText('cpu-usage', data.cpu_usage.toFixed(1));
+                safeSetWidth('cpu-progress', data.cpu_usage);
+                safeSetText('mem-used', data.mem_used);
+                safeSetText('mem-total', data.mem_total);
+                safeSetText('mem-percent', data.mem_percent.toFixed(1));
+                safeSetWidth('mem-progress', data.mem_percent);
+                safeSetText('swap-used', data.swap_used);
+                safeSetText('swap-total', data.swap_total);
+                safeSetText('swap-percent', data.swap_percent.toFixed(1));
+                safeSetWidth('swap-progress', data.swap_percent);
+                safeSetText('disk-used', data.disk_used);
+                safeSetText('disk-total', data.disk_total);
+                safeSetText('disk-percent', data.disk_percent.toFixed(1));
+                safeSetWidth('disk-progress', data.disk_percent);
+                safeSetText('uptime', data.uptime);
+                safeSetText('processes', data.processes);
+                safeSetText('load-1', data.load_avg.min1.toFixed(2));
+                safeSetText('load-5', data.load_avg.min5.toFixed(2));
+                safeSetText('load-15', data.load_avg.min15.toFixed(2));
+                safeSetText('net-sent', data.net_sent);
+                safeSetText('net-recv', data.net_recv);
 
                 // --- Tabela de Contêineres ---
                 const containersTableBody = document.getElementById('containers-table-body');
-                containersTableBody.innerHTML = ''; // Limpa a tabela
-                if (data.running_containers.length === 0) {
-                    containersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhum contêiner em execução.</td></tr>';
-                } else {
-                    data.running_containers.forEach(c => {
-                        const row = `<tr>
-                            <td class="font-medium text-white">${c.name}</td>
-                            <td>${c.id}</td>
-                            <td class="truncate max-w-xs">${c.image}</td>
-                            <td>${c.status}</td>
-                            <td>${c.uptime}</td>
-                        </tr>`;
-                        containersTableBody.innerHTML += row;
-                    });
+                if (containersTableBody) {
+                    containersTableBody.innerHTML = '';
+                    if (data.running_containers && data.running_containers.length > 0) {
+                        data.running_containers.forEach(c => {
+                            const row = `<tr><td class="font-medium text-white">${c.name}</td><td>${c.id}</td><td class="truncate max-w-xs">${c.image}</td><td>${c.status}</td><td>${c.uptime}</td></tr>`;
+                            containersTableBody.innerHTML += row;
+                        });
+                    } else {
+                        containersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhum contêiner em execução.</td></tr>';
+                    }
                 }
 
                 // --- Tabela de Portas ---
                 const portsTableBody = document.getElementById('ports-table-body');
-                portsTableBody.innerHTML = '';
-                if (data.listening_ports.length === 0) {
-                    portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta.</td></tr>';
-                } else {
-                    data.listening_ports.forEach(p => {
-                        const row = `<tr><td>${p.port}</td><td>${p.protocol}</td><td class="truncate">${p.process}</td><td>${p.pid}</td></tr>`;
-                        portsTableBody.innerHTML += row;
-                    });
+                if (portsTableBody) {
+                    portsTableBody.innerHTML = '';
+                    if (data.listening_ports && data.listening_ports.length > 0) {
+                        data.listening_ports.forEach(p => {
+                            const row = `<tr><td>${p.port}</td><td>${p.protocol}</td><td class="truncate">${p.process}</td><td>${p.pid}</td></tr>`;
+                            portsTableBody.innerHTML += row;
+                        });
+                    } else {
+                        portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta.</td></tr>';
+                    }
                 }
 
             } catch (error) {
-                console.error("Erro ao buscar estatísticas:", error);
+                console.error("Erro ao processar estatísticas:", error);
             }
         }
 
-        setInterval(updateStats, 3000); // Aumentei o intervalo para 3s para acomodar a chamada extra à API do Docker
+        setInterval(updateStats, 3000);
         window.onload = updateStats;
     </script>
 </body>

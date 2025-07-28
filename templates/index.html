@@ -13,12 +13,14 @@
         body { font-family: 'Inter', sans-serif; }
         .progress-bar { transition: width 0.5s ease-in-out; }
         .card { transition: background-color 0.5s ease-in-out, border-color 0.5s ease-in-out; }
-        .table-auto th, .table-auto td { @apply px-4 py-2; }
+        .table-auto th, .table-auto td { @apply px-4 py-2 text-sm; }
+        .table-auto th { @apply font-semibold; }
+        .table-auto td { @apply text-gray-300; }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4 sm:p-6">
 
-    <div class="w-full max-w-6xl mx-auto">
+    <div class="w-full max-w-7xl mx-auto">
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-cyan-400">Painel de Controle - Raspberry Pi</h1>
             <p class="text-gray-400 mt-2">Monitoramento de recursos do sistema em tempo real</p>
@@ -84,18 +86,18 @@
                 </div>
             </div>
 
-            <!-- Card: Rede -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2">
-                <h2 class="text-lg font-semibold text-gray-300 mb-3">Tráfego de Rede</h2>
-                <div class="flex justify-around items-center text-center mt-4">
-                    <div>
-                        <p class="text-sm text-gray-400">Enviado</p>
-                        <p id="net-sent" class="text-2xl font-bold text-red-400">--</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-400">Recebido</p>
-                        <p id="net-recv" class="text-2xl font-bold text-green-400">--</p>
-                    </div>
+            <!-- NOVA SEÇÃO: Contêineres em Execução -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4">
+                <h2 class="text-lg font-semibold text-gray-300 mb-4">Contêineres em Execução</h2>
+                <div class="overflow-x-auto max-h-72">
+                    <table class="table-auto w-full text-left">
+                        <thead class="sticky top-0 bg-gray-800">
+                            <tr><th>Nome</th><th>ID</th><th>Imagem</th><th>Status</th><th>Tempo Ativo</th></tr>
+                        </thead>
+                        <tbody id="containers-table-body">
+                           <!-- Linhas serão inseridas aqui via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -122,11 +124,11 @@
                 const response = await fetch('/stats');
                 const data = await response.json();
 
-                // Temperatura
+                // --- Seção de Temperatura ---
                 const tempCard = document.getElementById('temp-card');
                 tempCard.classList.remove('bg-yellow-900', 'border-yellow-500', 'bg-red-900', 'border-red-500');
                 if (data.cpu_temp_raw === null) {
-                    document.getElementById('temp-status-text').textContent = 'Status: Erro na leitura';
+                    document.getElementById('temp-status-text').textContent = 'Status: Erro';
                     document.getElementById('temp-status-icon').textContent = '⚠️';
                 } else if (data.cpu_temp_raw >= data.temp_limits.critical) {
                     tempCard.classList.add('bg-red-900', 'border-red-500');
@@ -142,54 +144,55 @@
                 }
                 document.getElementById('cpu-temp').textContent = data.cpu_temp;
 
-                // CPU
+                // --- Outras Métricas ---
                 document.getElementById('cpu-usage').textContent = data.cpu_usage.toFixed(1);
                 document.getElementById('cpu-progress').style.width = data.cpu_usage + '%';
-
-                // RAM
                 document.getElementById('mem-used').textContent = data.mem_used;
                 document.getElementById('mem-total').textContent = data.mem_total;
                 document.getElementById('mem-percent').textContent = data.mem_percent.toFixed(1);
                 document.getElementById('mem-progress').style.width = data.mem_percent + '%';
-
-                // SWAP
                 document.getElementById('swap-used').textContent = data.swap_used;
                 document.getElementById('swap-total').textContent = data.swap_total;
                 document.getElementById('swap-percent').textContent = data.swap_percent.toFixed(1);
                 document.getElementById('swap-progress').style.width = data.swap_percent + '%';
-
-                // Disco
                 document.getElementById('disk-used').textContent = data.disk_used;
                 document.getElementById('disk-total').textContent = data.disk_total;
                 document.getElementById('disk-percent').textContent = data.disk_percent.toFixed(1);
                 document.getElementById('disk-progress').style.width = data.disk_percent + '%';
-
-                // Info Sistema
                 document.getElementById('uptime').textContent = data.uptime;
                 document.getElementById('processes').textContent = data.processes;
-
-                // Carga Média
                 document.getElementById('load-1').textContent = data.load_avg.min1.toFixed(2);
                 document.getElementById('load-5').textContent = data.load_avg.min5.toFixed(2);
                 document.getElementById('load-15').textContent = data.load_avg.min15.toFixed(2);
-
-                // Rede
                 document.getElementById('net-sent').textContent = data.net_sent;
                 document.getElementById('net-recv').textContent = data.net_recv;
 
-                // Tabela de Portas
+                // --- Tabela de Contêineres ---
+                const containersTableBody = document.getElementById('containers-table-body');
+                containersTableBody.innerHTML = ''; // Limpa a tabela
+                if (data.running_containers.length === 0) {
+                    containersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhum contêiner em execução.</td></tr>';
+                } else {
+                    data.running_containers.forEach(c => {
+                        const row = `<tr>
+                            <td class="font-medium text-white">${c.name}</td>
+                            <td>${c.id}</td>
+                            <td class="truncate max-w-xs">${c.image}</td>
+                            <td>${c.status}</td>
+                            <td>${c.uptime}</td>
+                        </tr>`;
+                        containersTableBody.innerHTML += row;
+                    });
+                }
+
+                // --- Tabela de Portas ---
                 const portsTableBody = document.getElementById('ports-table-body');
-                portsTableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novas linhas
+                portsTableBody.innerHTML = '';
                 if (data.listening_ports.length === 0) {
-                    portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta encontrada.</td></tr>';
+                    portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta.</td></tr>';
                 } else {
                     data.listening_ports.forEach(p => {
-                        const row = `<tr>
-                            <td>${p.port}</td>
-                            <td>${p.protocol}</td>
-                            <td class="truncate" title="${p.process}">${p.process}</td>
-                            <td>${p.pid}</td>
-                        </tr>`;
+                        const row = `<tr><td>${p.port}</td><td>${p.protocol}</td><td class="truncate">${p.process}</td><td>${p.pid}</td></tr>`;
                         portsTableBody.innerHTML += row;
                     });
                 }
@@ -199,7 +202,7 @@
             }
         }
 
-        setInterval(updateStats, 2000);
+        setInterval(updateStats, 3000); // Aumentei o intervalo para 3s para acomodar a chamada extra à API do Docker
         window.onload = updateStats;
     </script>
 </body>

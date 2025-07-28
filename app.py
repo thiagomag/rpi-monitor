@@ -5,67 +5,52 @@ import psutil
 import os
 import datetime
 import time
-import docker  # Nova importação para comunicar com o Docker
+import docker  # Importação para comunicar com o Docker
+from dateutil import parser  # Para analisar datas do Docker
 
 # Inicializa a aplicação Flask
 app = Flask(__name__)
 
 # --- INICIALIZAÇÃO DO CLIENTE DOCKER ---
-# E um cache simples para informações de contêineres para não sobrecarregar a API do Docker
 try:
-    # Tenta conectar ao Docker usando o socket do ambiente
     docker_client = docker.from_env()
     container_info_cache = {}
     CACHE_EXPIRATION = 10  # segundos
 except docker.errors.DockerException:
-    # Se o socket do Docker não estiver disponível, o cliente será None
     docker_client = None
 
 # --- DEFINIÇÃO DOS LIMITES DE TEMPERATURA ---
-TEMP_WARNING = 70.0  # Temperatura em °C para alerta amarelo
-TEMP_CRITICAL = 75.0  # Temperatura em °C para alerta vermelho
+TEMP_WARNING = 70.0
+TEMP_CRITICAL = 75.0
 
 
 def get_container_name_from_port(port):
-    """
-    Verifica qual contêiner está expondo uma determinada porta.
-    Usa um cache para melhorar o desempenho.
-    """
+    """Verifica qual contêiner está expondo uma determinada porta."""
     global container_info_cache
     if not docker_client:
         return None
 
-    # Verifica se o cache é válido
     now = time.time()
-    if 'timestamp' in container_info_cache and (now - container_info_cache['timestamp']) < CACHE_EXPIRATION:
-        return container_info_cache.get(port)
-
-    # Se o cache expirou ou não existe, recria
-    container_info_cache = {'timestamp': now}
-    try:
-        for container in docker_client.containers.list():
-            ports = container.attrs.get('HostConfig', {}).get('PortBindings')
-            if ports:
+    if 'timestamp' not in container_info_cache or (now - container_info_cache['timestamp']) >= CACHE_EXPIRATION:
+        container_info_cache = {'timestamp': now}
+        try:
+            for container in docker_client.containers.list():
+                ports = container.attrs.get('HostConfig', {}).get('PortBindings')
+                if not ports:
+                    continue
                 for container_port, host_bindings in ports.items():
                     if host_bindings:
                         for binding in host_bindings:
-                            host_port = binding.get('HostPort')
-                            if host_port and int(host_port) == port:
-                                # Cacheia a informação [porta] -> [nome do container]
-                                container_info_cache[port] = container.name
-                                break
-    except Exception:
-        # Em caso de erro na comunicação com o Docker, retorna None
-        return None
-
+                            host_port_str = binding.get('HostPort')
+                            if host_port_str:
+                                container_info_cache[int(host_port_str)] = container.name
+        except Exception:
+            pass
     return container_info_cache.get(port)
 
 
 def get_cpu_temperature():
-    """
-    Obtém a temperatura da CPU como um número float.
-    Retorna a temperatura em graus Celsius ou None se não for encontrada.
-    """
+    """Obtém a temperatura da CPU."""
     try:
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             temp = float(f.read().strip()) / 1000.0
@@ -75,11 +60,8 @@ def get_cpu_temperature():
 
 
 def format_bytes(byte_count):
-    """
-    Formata uma quantidade de bytes para um formato legível (KB, MB, GB).
-    """
-    if byte_count is None:
-        return "N/A"
+    """Formata bytes em um formato legível."""
+    if byte_count is None: return "N/A"
     power = 1024
     n = 0
     power_labels = {0: '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
@@ -90,64 +72,61 @@ def format_bytes(byte_count):
 
 
 def get_uptime():
-    """Calcula o tempo de atividade do sistema e o formata."""
-    boot_time_timestamp = psutil.boot_time()
-    current_time_timestamp = time.time()
-    uptime_seconds = current_time_timestamp - boot_time_timestamp
-    return str(datetime.timedelta(seconds=int(uptime_seconds)))
+    """Calcula o tempo de atividade do sistema."""
+    return str(datetime.timedelta(seconds=int(time.time() - psutil.boot_time())))
 
 
 def get_listening_ports():
-    """
-    Obtém uma lista de portas em escuta, com o processo associado, sem duplicatas.
-    Tenta identificar o contêiner por trás do docker-proxy.
-    """
+    """Obtém uma lista de portas em escuta."""
     connections = psutil.net_connections(kind='inet')
-    listening_ports_map = {}  # Usar um dicionário para evitar duplicatas
-
+    listening_ports_map = {}
     for conn in connections:
         if conn.status == 'LISTEN':
             port = conn.laddr.port
-            if port in listening_ports_map:
-                continue
-
+            if port in listening_ports_map: continue
             proc_name = 'N/A'
             pid = conn.pid or 'N/A'
             try:
                 if conn.pid:
                     p = psutil.Process(conn.pid)
                     proc_name = p.name()
-
-                    # --- NOVA LÓGICA PARA IDENTIFICAR O CONTÊINER ---
                     if proc_name == 'docker-proxy':
                         container_name = get_container_name_from_port(port)
-                        if container_name:
-                            # Se encontrarmos o contêiner, mostramos seu nome!
-                            proc_name = f"Contêiner: {container_name}"
-                        else:
-                            # Se não, apenas dizemos que é um proxy do Docker
-                            proc_name = "Docker Proxy"
-
+                        proc_name = f"Contêiner: {container_name}" if container_name else "Docker Proxy"
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 proc_name = 'Acesso Negado'
+            listening_ports_map[port] = {'protocol': 'TCP' if conn.type == 1 else 'UDP', 'process': proc_name,
+                                         'pid': pid}
+    return [{'port': port, **data} for port, data in listening_ports_map.items()]
 
-            listening_ports_map[port] = {
-                'protocol': 'TCP' if conn.type == 1 else 'UDP',
-                'process': proc_name,
-                'pid': pid
-            }
 
-    # Converte o dicionário de volta para uma lista de objetos
-    final_list = []
-    for port, data in listening_ports_map.items():
-        final_list.append({
-            'port': port,
-            'protocol': data['protocol'],
-            'process': data['process'],
-            'pid': data['pid']
-        })
+def get_running_containers():
+    """
+    Obtém uma lista de contêineres em execução com detalhes.
+    """
+    if not docker_client:
+        return []
 
-    return final_list
+    container_list = []
+    try:
+        for container in docker_client.containers.list():
+            start_time_str = container.attrs['State']['StartedAt']
+            start_time = parser.isoparse(start_time_str)
+            # Converte para um objeto de tempo "aware" do fuso horário local para fazer a subtração correta
+            uptime_delta = datetime.datetime.now(start_time.tzinfo) - start_time
+
+            container_list.append({
+                'id': container.short_id,
+                'name': container.name,
+                'image': container.image.tags[0] if container.image.tags else 'N/A',
+                'status': container.status,
+                'uptime': str(uptime_delta).split('.')[0]  # Remove os microssegundos
+            })
+    except Exception as e:
+        # Se houver um erro (ex: comunicação com o Docker), retorna uma lista vazia
+        print(f"Erro ao buscar contêineres: {e}")
+        return []
+    return container_list
 
 
 # Rota principal que renderiza a página HTML
@@ -161,54 +140,35 @@ def index():
 @app.route('/stats')
 def stats():
     """Coleta e retorna as estatísticas do sistema."""
-    # Métricas existentes
     cpu_usage = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
     cpu_temp_raw = get_cpu_temperature()
-
-    # --- Novas Métricas ---
     swap = psutil.swap_memory()
     net_io = psutil.net_io_counters()
     load_avg = psutil.getloadavg()
-    uptime = get_uptime()
-    processes = len(psutil.pids())
-    listening_ports = get_listening_ports()
 
     system_stats = {
-        # Métricas de CPU e Temperatura
         'cpu_temp': f"{cpu_temp_raw:.1f}°C" if cpu_temp_raw is not None else "N/A",
         'cpu_temp_raw': cpu_temp_raw,
         'cpu_usage': cpu_usage,
         'temp_limits': {'warning': TEMP_WARNING, 'critical': TEMP_CRITICAL},
-
-        # Métricas de Memória
         'mem_total': format_bytes(memory.total),
         'mem_used': format_bytes(memory.used),
         'mem_percent': memory.percent,
-
-        # Métricas de Disco
         'disk_total': format_bytes(disk.total),
         'disk_used': format_bytes(disk.used),
         'disk_percent': disk.percent,
-
-        # --- Novos Dados no JSON ---
-        # Memória Swap
         'swap_total': format_bytes(swap.total),
         'swap_used': format_bytes(swap.used),
         'swap_percent': swap.percent,
-
-        # Rede
         'net_sent': format_bytes(net_io.bytes_sent),
         'net_recv': format_bytes(net_io.bytes_recv),
-
-        # Carga do Sistema e Processos
         'load_avg': {'min1': load_avg[0], 'min5': load_avg[1], 'min15': load_avg[2]},
-        'processes': processes,
-        'uptime': uptime,
-
-        # Portas
-        'listening_ports': listening_ports
+        'processes': len(psutil.pids()),
+        'uptime': get_uptime(),
+        'listening_ports': get_listening_ports(),
+        'running_containers': get_running_containers()  # --- NOVA INFORMAÇÃO ---
     }
 
     return jsonify(system_stats)

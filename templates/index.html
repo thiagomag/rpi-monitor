@@ -16,6 +16,7 @@
         .table-auto th, .table-auto td { @apply px-4 py-2 text-sm; }
         .table-auto th { @apply font-semibold; }
         .table-auto td { @apply text-gray-300; }
+        .modal { transition: opacity 0.25s ease; }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4 sm:p-6">
@@ -27,205 +28,153 @@
         </header>
 
         <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Card: Temperatura da CPU -->
-            <div id="temp-card" class="card bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col justify-between border-2 border-transparent">
-                <div>
-                    <div class="flex justify-between items-center"><h2 class="text-lg font-semibold text-gray-300">Temperatura</h2><span id="temp-status-icon" class="text-2xl"></span></div>
-                    <p id="cpu-temp" class="text-5xl font-bold text-white mt-2">--</p>
-                </div>
-                <div id="temp-status-text" class="text-sm font-medium mt-4">Status: Verificando...</div>
-            </div>
+            <!-- Cards de Métricas -->
+            <div id="temp-card" class="card bg-gray-800 p-6 rounded-xl shadow-lg"><div class="flex justify-between items-center"><h2 class="text-lg font-semibold text-gray-300">Temperatura</h2><span id="temp-status-icon" class="text-2xl"></span></div><p id="cpu-temp" class="text-5xl font-bold text-white mt-2">--</p><div id="temp-status-text" class="text-sm font-medium mt-4">Status: Verificando...</div></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Uso da CPU</h2><p class="text-5xl font-bold text-white mt-2"><span id="cpu-usage">--</span>%</p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="cpu-progress" class="bg-cyan-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Memória (RAM)</h2><p class="text-2xl font-bold text-white mt-2"><span id="mem-used">--</span> / <span id="mem-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="mem-percent">--</span>%</p></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Memória (Swap)</h2><p class="text-2xl font-bold text-white mt-2"><span id="swap-used">--</span> / <span id="swap-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="swap-progress" class="bg-orange-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="swap-percent">--</span>%</p></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2"><h2 class="text-lg font-semibold text-gray-300">Armazenamento (Disco)</h2><p class="text-3xl font-bold text-white mt-2"><span id="disk-used">--</span> / <span id="disk-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="disk-progress" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="disk-percent">--</span>%</p></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300 mb-3">Info Sistema</h2><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Tempo Ativo:</span> <strong id="uptime">--</strong></div><div class="flex justify-between"><span>Processos:</span> <strong id="processes">--</strong></div></div></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300 mb-3">Carga Média (Load)</h2><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Último 1 min:</span> <strong id="load-1">--</strong></div><div class="flex justify-between"><span>Últimos 5 min:</span> <strong id="load-5">--</strong></div><div class="flex justify-between"><span>Últimos 15 min:</span> <strong id="load-15">--</strong></div></div></div>
 
-            <!-- Card: Uso da CPU -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-lg font-semibold text-gray-300">Uso da CPU</h2>
-                <p class="text-5xl font-bold text-white mt-2"><span id="cpu-usage">--</span>%</p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="cpu-progress" class="bg-cyan-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
-            </div>
-
-            <!-- Card: Uso de Memória RAM -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-lg font-semibold text-gray-300">Memória (RAM)</h2>
-                <p class="text-2xl font-bold text-white mt-2"><span id="mem-used">--</span> / <span id="mem-total">--</span></p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
-                <p class="text-right text-lg font-medium mt-2"><span id="mem-percent">--</span>%</p>
-            </div>
-
-            <!-- Card: Uso de Memória SWAP -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-lg font-semibold text-gray-300">Memória (Swap)</h2>
-                <p class="text-2xl font-bold text-white mt-2"><span id="swap-used">--</span> / <span id="swap-total">--</span></p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="swap-progress" class="bg-orange-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
-                <p class="text-right text-lg font-medium mt-2"><span id="swap-percent">--</span>%</p>
-            </div>
-
-            <!-- Card: Uso de Armazenamento -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2">
-                <h2 class="text-lg font-semibold text-gray-300">Armazenamento (Disco)</h2>
-                 <p class="text-3xl font-bold text-white mt-2"><span id="disk-used">--</span> / <span id="disk-total">--</span></p>
-                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="disk-progress" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div>
-                <p class="text-right text-lg font-medium mt-2"><span id="disk-percent">--</span>%</p>
-            </div>
-
-            <!-- Card: Informações do Sistema -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-lg font-semibold text-gray-300 mb-3">Info Sistema</h2>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between"><span>Tempo Ativo:</span> <strong id="uptime">--</strong></div>
-                    <div class="flex justify-between"><span>Processos:</span> <strong id="processes">--</strong></div>
-                </div>
-            </div>
-
-            <!-- Card: Carga Média -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-lg font-semibold text-gray-300 mb-3">Carga Média (Load)</h2>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between"><span>Último 1 min:</span> <strong id="load-1">--</strong></div>
-                    <div class="flex justify-between"><span>Últimos 5 min:</span> <strong id="load-5">--</strong></div>
-                    <div class="flex justify-between"><span>Últimos 15 min:</span> <strong id="load-15">--</strong></div>
-                </div>
-            </div>
-
-            <!-- NOVA SEÇÃO: Contêineres em Execução -->
+            <!-- Card de Ações do Sistema -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4">
-                <h2 class="text-lg font-semibold text-gray-300 mb-4">Contêineres em Execução</h2>
-                <div class="overflow-x-auto max-h-72">
-                    <table class="table-auto w-full text-left">
-                        <thead class="sticky top-0 bg-gray-800">
-                            <tr><th>Nome</th><th>ID</th><th>Imagem</th><th>Status</th><th>Tempo Ativo</th></tr>
-                        </thead>
-                        <tbody id="containers-table-body">
-                           <!-- Linhas serão inseridas aqui via JS -->
-                        </tbody>
-                    </table>
+                <h2 class="text-lg font-semibold text-gray-300 mb-4">Ações do Sistema</h2>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button id="restart-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Reiniciar</button>
+                    <button id="shutdown-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Desligar</button>
                 </div>
             </div>
 
-            <!-- Tabela: Portas em Escuta -->
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4">
-                <h2 class="text-lg font-semibold text-gray-300 mb-4">Portas em Escuta (Listening)</h2>
-                <div class="overflow-x-auto max-h-60">
-                    <table class="table-auto w-full text-left">
-                        <thead class="sticky top-0 bg-gray-800">
-                            <tr><th>Porta</th><th>Protocolo</th><th>Aplicação</th><th>PID</th></tr>
-                        </thead>
-                        <tbody id="ports-table-body">
-                           <!-- Linhas serão inseridas aqui via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <!-- Tabela de Contêineres -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4"><h2 class="text-lg font-semibold text-gray-300 mb-4">Contêineres em Execução</h2><div class="overflow-x-auto max-h-72"><table class="table-auto w-full text-left"><thead class="sticky top-0 bg-gray-800"><tr><th>Nome</th><th>ID</th><th>Imagem</th><th>Status</th><th>Tempo Ativo</th></tr></thead><tbody id="containers-table-body"></tbody></table></div></div>
+            <!-- Tabela de Portas -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4"><h2 class="text-lg font-semibold text-gray-300 mb-4">Portas em Escuta (Listening)</h2><div class="overflow-x-auto max-h-60"><table class="table-auto w-full text-left"><thead class="sticky top-0 bg-gray-800"><tr><th>Porta</th><th>Protocolo</th><th>Aplicação</th><th>PID</th></tr></thead><tbody id="ports-table-body"></tbody></table></div></div>
         </main>
     </div>
 
-    <script>
-        // Função auxiliar para atualizar o texto de um elemento de forma segura
-        function safeSetText(id, text) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = text;
-            } else {
-                console.warn(`[Monitor] Elemento com ID '${id}' não foi encontrado.`);
-            }
-        }
+    <!-- Modal de Confirmação Genérico -->
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50 opacity-0">
+        <div class="bg-gray-800 rounded-lg p-8 shadow-2xl w-full max-w-md mx-4">
+            <h3 id="modal-title" class="text-2xl font-bold text-white mb-4"></h3>
+            <p id="modal-body" class="text-gray-300 mb-6"></p>
+            <div class="flex justify-end space-x-4">
+                <button id="modal-cancel" class="px-6 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold transition-colors">Cancelar</button>
+                <button id="modal-confirm" class="px-6 py-2 rounded-lg text-white font-semibold transition-colors"></button>
+            </div>
+        </div>
+    </div>
 
-        // Função auxiliar para atualizar a largura de uma barra de progresso de forma segura
-        function safeSetWidth(id, percentage) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.style.width = percentage + '%';
-            } else {
-                console.warn(`[Monitor] Elemento com ID '${id}' não foi encontrado.`);
-            }
-        }
+    <script>
+        // Funções auxiliares para UI
+        function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
+        function safeSetWidth(id, p) { const el = document.getElementById(id); if (el) el.style.width = p + '%'; }
 
         async function updateStats() {
             try {
-                // CORREÇÃO: Construir a URL completa para a chamada fetch.
                 const statsUrl = `${window.location.protocol}//${window.location.hostname}:5000/stats`;
                 const response = await fetch(statsUrl);
-
-                if (!response.ok) {
-                    console.error("Erro na resposta do servidor:", response.status, response.statusText);
-                    return;
-                }
+                if (!response.ok) return;
                 const data = await response.json();
 
-                // --- Seção de Temperatura ---
+                // Atualiza todas as métricas
                 const tempCard = document.getElementById('temp-card');
                 if (tempCard) {
                     tempCard.classList.remove('bg-yellow-900', 'border-yellow-500', 'bg-red-900', 'border-red-500');
-                    if (data.cpu_temp_raw === null) {
-                        safeSetText('temp-status-text', 'Status: Erro');
-                        safeSetText('temp-status-icon', '⚠️');
-                    } else if (data.cpu_temp_raw >= data.temp_limits.critical) {
-                        tempCard.classList.add('bg-red-900', 'border-red-500');
-                        safeSetText('temp-status-text', `Status: Crítico!`);
-                        safeSetText('temp-status-icon', '🔥');
-                    } else if (data.cpu_temp_raw >= data.temp_limits.warning) {
-                        tempCard.classList.add('bg-yellow-900', 'border-yellow-500');
-                        safeSetText('temp-status-text', `Status: Atenção`);
-                        safeSetText('temp-status-icon', '⚠️');
-                    } else {
-                        safeSetText('temp-status-text', 'Status: Normal');
-                        safeSetText('temp-status-icon', '✅');
-                    }
+                    if (data.cpu_temp_raw === null) { safeSetText('temp-status-text', 'Status: Erro'); safeSetText('temp-status-icon', '⚠️'); }
+                    else if (data.cpu_temp_raw >= data.temp_limits.critical) { tempCard.classList.add('bg-red-900', 'border-red-500'); safeSetText('temp-status-text', `Status: Crítico!`); safeSetText('temp-status-icon', '🔥'); }
+                    else if (data.cpu_temp_raw >= data.temp_limits.warning) { tempCard.classList.add('bg-yellow-900', 'border-yellow-500'); safeSetText('temp-status-text', `Status: Atenção`); safeSetText('temp-status-icon', '⚠️'); }
+                    else { safeSetText('temp-status-text', 'Status: Normal'); safeSetText('temp-status-icon', '✅'); }
                 }
                 safeSetText('cpu-temp', data.cpu_temp);
+                safeSetText('cpu-usage', data.cpu_usage.toFixed(1)); safeSetWidth('cpu-progress', data.cpu_usage);
+                safeSetText('mem-used', data.mem_used); safeSetText('mem-total', data.mem_total); safeSetText('mem-percent', data.mem_percent.toFixed(1)); safeSetWidth('mem-progress', data.mem_percent);
+                safeSetText('swap-used', data.swap_used); safeSetText('swap-total', data.swap_total); safeSetText('swap-percent', data.swap_percent.toFixed(1)); safeSetWidth('swap-progress', data.swap_percent);
+                safeSetText('disk-used', data.disk_used); safeSetText('disk-total', data.disk_total); safeSetText('disk-percent', data.disk_percent.toFixed(1)); safeSetWidth('disk-progress', data.disk_percent);
+                safeSetText('uptime', data.uptime); safeSetText('processes', data.processes);
+                safeSetText('load-1', data.load_avg.min1.toFixed(2)); safeSetText('load-5', data.load_avg.min5.toFixed(2)); safeSetText('load-15', data.load_avg.min15.toFixed(2));
+                safeSetText('net-sent', data.net_sent); safeSetText('net-recv', data.net_recv);
 
-                // --- Outras Métricas ---
-                safeSetText('cpu-usage', data.cpu_usage.toFixed(1));
-                safeSetWidth('cpu-progress', data.cpu_usage);
-                safeSetText('mem-used', data.mem_used);
-                safeSetText('mem-total', data.mem_total);
-                safeSetText('mem-percent', data.mem_percent.toFixed(1));
-                safeSetWidth('mem-progress', data.mem_percent);
-                safeSetText('swap-used', data.swap_used);
-                safeSetText('swap-total', data.swap_total);
-                safeSetText('swap-percent', data.swap_percent.toFixed(1));
-                safeSetWidth('swap-progress', data.swap_percent);
-                safeSetText('disk-used', data.disk_used);
-                safeSetText('disk-total', data.disk_total);
-                safeSetText('disk-percent', data.disk_percent.toFixed(1));
-                safeSetWidth('disk-progress', data.disk_percent);
-                safeSetText('uptime', data.uptime);
-                safeSetText('processes', data.processes);
-                safeSetText('load-1', data.load_avg.min1.toFixed(2));
-                safeSetText('load-5', data.load_avg.min5.toFixed(2));
-                safeSetText('load-15', data.load_avg.min15.toFixed(2));
-                safeSetText('net-sent', data.net_sent);
-                safeSetText('net-recv', data.net_recv);
-
-                // --- Tabela de Contêineres ---
+                // Tabela de Contêineres
                 const containersTableBody = document.getElementById('containers-table-body');
                 if (containersTableBody) {
                     containersTableBody.innerHTML = '';
-                    if (data.running_containers && data.running_containers.length > 0) {
-                        data.running_containers.forEach(c => {
-                            const row = `<tr><td class="font-medium text-white">${c.name}</td><td>${c.id}</td><td class="truncate max-w-xs">${c.image}</td><td>${c.status}</td><td>${c.uptime}</td></tr>`;
-                            containersTableBody.innerHTML += row;
-                        });
-                    } else {
-                        containersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhum contêiner em execução.</td></tr>';
-                    }
+                    if (data.running_containers && data.running_containers.length > 0) { data.running_containers.forEach(c => { containersTableBody.innerHTML += `<tr><td class="font-medium text-white">${c.name}</td><td>${c.id}</td><td class="truncate max-w-xs">${c.image}</td><td>${c.status}</td><td>${c.uptime}</td></tr>`; });
+                    } else { containersTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500">Nenhum contêiner em execução.</td></tr>'; }
                 }
 
-                // --- Tabela de Portas ---
+                // Tabela de Portas
                 const portsTableBody = document.getElementById('ports-table-body');
                 if (portsTableBody) {
                     portsTableBody.innerHTML = '';
-                    if (data.listening_ports && data.listening_ports.length > 0) {
-                        data.listening_ports.forEach(p => {
-                            const row = `<tr><td>${p.port}</td><td>${p.protocol}</td><td class="truncate">${p.process}</td><td>${p.pid}</td></tr>`;
-                            portsTableBody.innerHTML += row;
-                        });
-                    } else {
-                        portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta.</td></tr>';
-                    }
+                    if (data.listening_ports && data.listening_ports.length > 0) { data.listening_ports.forEach(p => { portsTableBody.innerHTML += `<tr><td>${p.port}</td><td>${p.protocol}</td><td class="truncate">${p.process}</td><td>${p.pid}</td></tr>`; });
+                    } else { portsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-500">Nenhuma porta em escuta.</td></tr>'; }
                 }
+            } catch (error) { console.error("Erro ao processar estatísticas:", error); }
+        }
 
+        // Lógica do Modal de Confirmação
+        const modal = document.getElementById('confirmation-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalCancel = document.getElementById('modal-cancel');
+        const modalConfirm = document.getElementById('modal-confirm');
+        let confirmAction = null;
+
+        function showModal({ title, body, confirmText, confirmClass, action }) {
+            modalTitle.textContent = title;
+            modalBody.textContent = body;
+            modalConfirm.textContent = confirmText;
+            modalConfirm.className = `px-6 py-2 rounded-lg text-white font-semibold transition-colors ${confirmClass}`;
+            confirmAction = action;
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function hideModal() {
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 250);
+        }
+
+        document.getElementById('shutdown-btn').addEventListener('click', () => {
+            showModal({
+                title: 'Confirmar Desligamento',
+                body: 'Você tem certeza que deseja desligar o Raspberry Pi? Esta ação é irreversível.',
+                confirmText: 'Desligar',
+                confirmClass: 'bg-red-600 hover:bg-red-700',
+                action: () => sendSystemCommand('shutdown', 'Desligamento')
+            });
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            showModal({
+                title: 'Confirmar Reinicialização',
+                body: 'Você tem certeza que deseja reiniciar o Raspberry Pi?',
+                confirmText: 'Reiniciar',
+                confirmClass: 'bg-yellow-600 hover:bg-yellow-700',
+                action: () => sendSystemCommand('restart', 'Reinicialização')
+            });
+        });
+
+        modalCancel.addEventListener('click', hideModal);
+        modalConfirm.addEventListener('click', () => {
+            if (typeof confirmAction === 'function') {
+                confirmAction();
+            }
+        });
+
+        async function sendSystemCommand(command, commandName) {
+            modalConfirm.disabled = true;
+            modalConfirm.textContent = `${commandName}...`;
+            modalCancel.disabled = true;
+
+            try {
+                const url = `${window.location.protocol}//${window.location.hostname}:5000/${command}`;
+                await fetch(url, { method: 'POST' });
+                document.body.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><h1 class="text-4xl font-bold text-cyan-400">Comando de ${commandName} Enviado</h1><p class="text-gray-400 mt-4">O sistema deve responder em breve. Você pode fechar esta janela.</p></div>`;
             } catch (error) {
-                console.error("Erro ao processar estatísticas:", error);
+                // É esperado um erro de rede, pois o servidor será desligado/reiniciado
+                document.body.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><h1 class="text-4xl font-bold text-cyan-400">Comando de ${commandName} Enviado</h1><p class="text-gray-400 mt-4">O sistema deve responder em breve. Você pode fechar esta janela.</p></div>`;
             }
         }
 

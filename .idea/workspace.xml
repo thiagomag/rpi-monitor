@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="4e1e0d31-84eb-4c4a-bcde-bf864a4ff2ab" name="Changes" comment="minor correction">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -98,7 +98,7 @@
       <option name="presentableId" value="Default" />
       <updated>1753557032314</updated>
       <workItem from="1753557033342" duration="5272000" />
-      <workItem from="1753665061790" duration="871000" />
+      <workItem from="1753665061790" duration="2626000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -132,7 +132,23 @@
       <option name="project" value="LOCAL" />
       <updated>1753562953028</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="minor correction">
+      <option name="closed" value="true" />
+      <created>1753666554440</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1753666554440</updated>
+    </task>
+    <task id="LOCAL-00006" summary="minor correction">
+      <option name="closed" value="true" />
+      <created>1753667475149</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1753667475149</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -169,7 +169,7 @@
             modalCancel.disabled = true;
 
             try {
-                const url = `${window.location.protocol}//${window.location.hostname}:5000/${command}`;
+                const url = `${window.location.protocol}//${window.location.hostname}/rpi-monitor/${command}`;
                 await fetch(url, { method: 'POST' });
                 document.body.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><h1 class="text-4xl font-bold text-cyan-400">Comando de ${commandName} Enviado</h1><p class="text-gray-400 mt-4">O sistema deve responder em breve. Você pode fechar esta janela.</p></div>`;
             } catch (error) {

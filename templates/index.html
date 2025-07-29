@@ -1,4 +1,3 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -28,7 +27,6 @@
         </header>
 
         <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Cards de Métricas -->
             <div id="temp-card" class="card bg-gray-800 p-6 rounded-xl shadow-lg"><div class="flex justify-between items-center"><h2 class="text-lg font-semibold text-gray-300">Temperatura</h2><span id="temp-status-icon" class="text-2xl"></span></div><p id="cpu-temp" class="text-5xl font-bold text-white mt-2">--</p><div id="temp-status-text" class="text-sm font-medium mt-4">Status: Verificando...</div></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Uso da CPU</h2><p class="text-5xl font-bold text-white mt-2"><span id="cpu-usage">--</span>%</p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="cpu-progress" class="bg-cyan-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Memória (RAM)</h2><p class="text-2xl font-bold text-white mt-2"><span id="mem-used">--</span> / <span id="mem-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="mem-percent">--</span>%</p></div>
@@ -37,7 +35,6 @@
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300 mb-3">Info Sistema</h2><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Tempo Ativo:</span> <strong id="uptime">--</strong></div><div class="flex justify-between"><span>Processos:</span> <strong id="processes">--</strong></div></div></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300 mb-3">Carga Média (Load)</h2><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Último 1 min:</span> <strong id="load-1">--</strong></div><div class="flex justify-between"><span>Últimos 5 min:</span> <strong id="load-5">--</strong></div><div class="flex justify-between"><span>Últimos 15 min:</span> <strong id="load-15">--</strong></div></div></div>
 
-            <!-- Card de Ações do Sistema -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4">
                 <h2 class="text-lg font-semibold text-gray-300 mb-4">Ações do Sistema</h2>
                 <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -46,14 +43,11 @@
                 </div>
             </div>
 
-            <!-- Tabela de Contêineres -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4"><h2 class="text-lg font-semibold text-gray-300 mb-4">Contêineres em Execução</h2><div class="overflow-x-auto max-h-72"><table class="table-auto w-full text-left"><thead class="sticky top-0 bg-gray-800"><tr><th>Nome</th><th>ID</th><th>Imagem</th><th>Status</th><th>Tempo Ativo</th></tr></thead><tbody id="containers-table-body"></tbody></table></div></div>
-            <!-- Tabela de Portas -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-4"><h2 class="text-lg font-semibold text-gray-300 mb-4">Portas em Escuta (Listening)</h2><div class="overflow-x-auto max-h-60"><table class="table-auto w-full text-left"><thead class="sticky top-0 bg-gray-800"><tr><th>Porta</th><th>Protocolo</th><th>Aplicação</th><th>PID</th></tr></thead><tbody id="ports-table-body"></tbody></table></div></div>
         </main>
     </div>
 
-    <!-- Modal de Confirmação Genérico -->
     <div id="confirmation-modal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50 opacity-0">
         <div class="bg-gray-800 rounded-lg p-8 shadow-2xl w-full max-w-md mx-4">
             <h3 id="modal-title" class="text-2xl font-bold text-white mb-4"></h3>
@@ -72,7 +66,9 @@
 
         async function updateStats() {
             try {
-                const statsUrl = `${window.location.protocol}//${window.location.hostname}:5000/stats`;
+                // --- CORREÇÃO AQUI ---
+                // A URL para os dados agora é relativa, funcionando atrás do proxy.
+                const statsUrl = 'stats'; // ou './stats'
                 const response = await fetch(statsUrl);
                 if (!response.ok) return;
                 const data = await response.json();
@@ -169,8 +165,10 @@
             modalCancel.disabled = true;
 
             try {
-                const url = `${window.location.protocol}//${window.location.hostname}/rpi-monitor/${command}`;
-                await fetch(url, { method: 'POST' });
+                // --- CORREÇÃO AQUI ---
+                // A URL para os comandos também é relativa.
+                 // ou `./${command}`
+                await fetch(command, { method: 'POST' });
                 document.body.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><h1 class="text-4xl font-bold text-cyan-400">Comando de ${commandName} Enviado</h1><p class="text-gray-400 mt-4">O sistema deve responder em breve. Você pode fechar esta janela.</p></div>`;
             } catch (error) {
                 // É esperado um erro de rede, pois o servidor será desligado/reiniciado

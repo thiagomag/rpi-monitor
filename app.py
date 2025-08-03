@@ -20,7 +20,7 @@ except docker.errors.DockerException:
     docker_client = None
 
 # --- DEFINIÇÃO DOS LIMITES DE TEMPERATURA ---
-TEMP_WARNING = 70.0
+TEMP_WARNING = 65.0
 TEMP_CRITICAL = 75.0
 
 def get_container_name_from_port(port):
@@ -141,19 +141,21 @@ def stats():
     }
     return jsonify(system_stats)
 
-# --- NOVOS ENDPOINTS PARA AÇÕES DO SISTEMA ---
+# --- ENDPOINTS ATUALIZADOS PARA USAR D-BUS ---
 @app.route('/shutdown', methods=['POST'])
 def shutdown_pi():
-    """Desliga o Raspberry Pi."""
-    print("Recebido comando para desligar o sistema.")
-    os.system('sudo shutdown -h now')
+    """Desliga o Raspberry Pi enviando um comando D-Bus."""
+    print("Recebido comando para desligar o sistema via D-Bus.")
+    # Comando D-Bus para desligar
+    os.system('dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 "org.freedesktop.login1.Manager.PowerOff" boolean:true')
     return jsonify({'status': 'success', 'message': 'Comando de desligamento enviado.'})
 
 @app.route('/restart', methods=['POST'])
 def restart_pi():
-    """Reinicia o Raspberry Pi."""
-    print("Recebido comando para reiniciar o sistema.")
-    os.system('sudo shutdown -r now')
+    """Reinicia o Raspberry Pi enviando um comando D-Bus."""
+    print("Recebido comando para reiniciar o sistema via D-Bus.")
+    # Comando D-Bus para reiniciar
+    os.system('dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 "org.freedesktop.login1.Manager.Reboot" boolean:true')
     return jsonify({'status': 'success', 'message': 'Comando de reinicialização enviado.'})
 
 # Executa a aplicação

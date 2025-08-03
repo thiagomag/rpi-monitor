@@ -15,6 +15,11 @@ build:
 	@echo "--> Construindo a imagem Docker: $(IMAGE_NAME):latest..."
 	@docker build -t $(IMAGE_NAME):latest .
 
+# Fazendo push da imagem para o docker
+push:
+    @echo "--> Enviando a imagem Docker: $(IMAGE_NAME):latest..."
+    @docker push $(IMAGE_NAME):latest
+
 # Para o contêiner em execução. O hífen no início ignora o erro se o contêiner não existir.
 stop:
 	@echo "--> Parando o contêiner $(CONTAINER_NAME)..."
@@ -43,7 +48,7 @@ restart: rm run
 	@echo "--> Contêiner reiniciado com sucesso!"
 
 # Reconstrói a imagem e reinicia o contêiner. Ideal para aplicar mudanças no código.
-rebuild: build restart
+rebuild: build push restart
 	@echo "--> Imagem reconstruída e contêiner reiniciado com sucesso!"
 
 # Este alvo é um alias para 'rebuild', juntando todos os passos em um único comando.

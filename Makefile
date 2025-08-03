@@ -72,6 +72,10 @@ push: build
 clean: rm
 	@echo "--> Ambiente limpo."
 
+clean-images:
+	@echo "--> Limpando as imagens docker do sistema"
+	@docker system prune -a --volumes
+
 
 # Declara que os alvos não são arquivos, o que é uma boa prática.
 .PHONY: all build stop rm run restart rebuild deploy logs push clean

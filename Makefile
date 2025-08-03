@@ -17,8 +17,8 @@ build:
 
 # Fazendo push da imagem para o docker
 push:
-    @echo "--> Enviando a imagem Docker: $(IMAGE_NAME):latest..."
-    @docker push $(IMAGE_NAME):latest
+	@echo "--> Enviando a imagem Docker: $(IMAGE_NAME):latest..."
+	@docker push $(IMAGE_NAME):latest
 
 # Para o contêiner em execução. O hífen no início ignora o erro se o contêiner não existir.
 stop:

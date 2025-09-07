@@ -179,38 +179,38 @@ def restart_pi():
 
 @app.route('/eject-hdd', methods=['POST'])
 def eject_hdd():
-    """Para o container do Jellyfin e desmonta o HD externo."""
+    """Para o container do Jellyfin e desmonta o HD externo no host."""
     print("Recebido comando para ejetar o HD externo.")
     stop_jellyfin_cmd = 'docker stop jellyfin'
-    # CORREÇÃO: O comando umount precisa operar no contexto do host
-    umount_hdd_cmd = 'umount /hostfs/mnt/media'
+    # CORREÇÃO FINAL: Usa nsenter para executar o comando no namespace de montagem do host
+    umount_hdd_cmd = 'nsenter --target 1 --mount -- umount /mnt/media'
     try:
         print("Parando o container do Jellyfin...")
         os.system(stop_jellyfin_cmd)
         time.sleep(5)
-        print("Desmontando o HD...")
+        print("Desmontando o HD no host...")
         os.system(umount_hdd_cmd)
-        print("HD ejetado com sucesso.")
-        return jsonify({'status': 'success', 'message': 'HD ejetado com sucesso.'})
+        print("Comando de ejeção enviado.")
+        return jsonify({'status': 'success', 'message': 'Comando de ejeção enviado.'})
     except Exception as e:
         print(f"Erro ao ejetar o HD: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao ejetar HD: {e}'}), 500
 
 @app.route('/mount-hdd', methods=['POST'])
 def mount_hdd():
-    """Monta o HD externo e inicia o container do Jellyfin."""
+    """Monta o HD externo no host e inicia o container do Jellyfin."""
     print("Recebido comando para montar o HD e iniciar o Jellyfin.")
-    # CORREÇÃO: O comando mount precisa operar no contexto do host
-    mount_cmd = 'mount -a'
+    # CORREÇÃO FINAL: Usa nsenter para executar o comando no namespace de montagem do host
+    mount_cmd = 'nsenter --target 1 --mount -- mount -a'
     start_jellyfin_cmd = 'docker start jellyfin'
     try:
-        print("Montando o HD...")
+        print("Montando o HD no host via 'mount -a'...")
         os.system(mount_cmd)
         time.sleep(3)
         print("Iniciando o container do Jellyfin...")
         os.system(start_jellyfin_cmd)
-        print("HD montado e serviço iniciado com sucesso.")
-        return jsonify({'status': 'success', 'message': 'HD montado e Jellyfin iniciado.'})
+        print("Comando para ligar o HD e o serviço enviado.")
+        return jsonify({'status': 'success', 'message': 'Comando para ligar o HD e Jellyfin enviado.'})
     except Exception as e:
         print(f"Erro ao montar o HD: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao montar HD: {e}'}), 500

@@ -12,4 +12,5 @@ docker run -d \
   --pid="host" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
+  -v /:/hostfs:ro \
   thiagomag/rpi-monitor:latest

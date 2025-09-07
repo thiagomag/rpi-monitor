@@ -32,6 +32,8 @@
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Memória (RAM)</h2><p class="text-2xl font-bold text-white mt-2"><span id="mem-used">--</span> / <span id="mem-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="mem-progress" class="bg-purple-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="mem-percent">--</span>%</p></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300">Memória (Swap)</h2><p class="text-2xl font-bold text-white mt-2"><span id="swap-used">--</span> / <span id="swap-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="swap-progress" class="bg-orange-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="swap-percent">--</span>%</p></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2"><h2 class="text-lg font-semibold text-gray-300">Armazenamento (Disco)</h2><p class="text-3xl font-bold text-white mt-2"><span id="disk-used">--</span> / <span id="disk-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="disk-progress" class="bg-green-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="disk-percent">--</span>%</p></div>
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2"><h2 class="text-lg font-semibold text-gray-300">Armazenamento (Sistema)</h2></div>
+            <div id="hdd-card" class="bg-gray-800 p-6 rounded-xl shadow-lg lg:col-span-2 relative"><div class="flex justify-between items-center"><h2 class="text-lg font-semibold text-gray-300">Armazenamento (HD Externo)</h2><span id="hdd-status-badge" class="px-3 py-1 text-xs font-bold rounded-full">--</span></div><p class="text-3xl font-bold text-white mt-2"><span id="hdd-used">--</span> / <span id="hdd-total">--</span></p><div class="w-full bg-gray-700 rounded-full h-2.5 mt-4"><div id="hdd-progress" class="bg-blue-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div></div><p class="text-right text-lg font-medium mt-2"><span id="hdd-percent">--</span>%</p></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300 mb-3">Info Sistema</h2><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Tempo Ativo:</span> <strong id="uptime">--</strong></div><div class="flex justify-between"><span>Processos:</span> <strong id="processes">--</strong></div></div></div>
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg"><h2 class="text-lg font-semibold text-gray-300 mb-3">Carga Média (Load)</h2><div class="space-y-2 text-sm"><div class="flex justify-between"><span>Último 1 min:</span> <strong id="load-1">--</strong></div><div class="flex justify-between"><span>Últimos 5 min:</span> <strong id="load-5">--</strong></div><div class="flex justify-between"><span>Últimos 15 min:</span> <strong id="load-15">--</strong></div></div></div>
 
@@ -92,6 +94,29 @@
                 safeSetText('uptime', data.uptime); safeSetText('processes', data.processes);
                 safeSetText('load-1', data.load_avg.min1.toFixed(2)); safeSetText('load-5', data.load_avg.min5.toFixed(2)); safeSetText('load-15', data.load_avg.min15.toFixed(2));
                 safeSetText('net-sent', data.net_sent); safeSetText('net-recv', data.net_recv);
+                safeSetText('hdd-used', data.hdd_used); safeSetText('hdd-total', data.hdd_total); safeSetText('hdd-percent', data.hdd_percent.toFixed(1)); safeSetWidth('hdd-progress', data.hdd_percent);
+
+                const hddStatusBadge = document.getElementById('hdd-status-badge');
+                const mountBtn = document.getElementById('mount-btn');
+                const ejectBtn = document.getElementById('eject-btn');
+
+                if (data.hdd_mounted) {
+                    // Se o HD estiver montado
+                    hddStatusBadge.textContent = 'CONECTADO';
+                    hddStatusBadge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-green-500 text-white';
+                    mountBtn.disabled = true;  // Desabilita o botão de Ligar
+                    mountBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    ejectBtn.disabled = false; // Habilita o botão de Ejetar
+                    ejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    // Se o HD NÃO estiver montado
+                    hddStatusBadge.textContent = 'EJETADO';
+                    hddStatusBadge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-red-500 text-white';
+                    mountBtn.disabled = false; // Habilita o botão de Ligar
+                    mountBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    ejectBtn.disabled = true;  // Desabilita o botão de Ejetar
+                    ejectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
 
                 // Tabela de Contêineres
                 const containersTableBody = document.getElementById('containers-table-body');

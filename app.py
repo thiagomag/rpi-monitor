@@ -115,6 +115,25 @@ def index():
 # Rota da API que fornece os dados do sistema em formato JSON
 @app.route('/stats')
 def stats():
+    disk_usage = psutil.disk_usage('/')
+
+    hdd_mounted = is_hdd_mounted()
+
+    # Se o HD estiver montado, pegamos as estatísticas dele.
+    # Caso contrário, mostramos valores zerados.
+    if hdd_mounted:
+        hdd_usage = psutil.disk_usage('/mnt/media')
+        hdd_status_text = "Conectado"
+    else:
+        # Cria um objeto 'falso' se o disco não estiver montado
+        class MockUsage:
+            total = 0;
+            used = 0;
+            percent = 0
+
+        hdd_usage = MockUsage()
+        hdd_status_text = "Ejetado / Desconectado"
+
     """Coleta e retorna as estatísticas do sistema."""
     # ... (coleta de dados igual à versão anterior)
     system_stats = {
@@ -125,9 +144,14 @@ def stats():
         'mem_total': format_bytes(psutil.virtual_memory().total),
         'mem_used': format_bytes(psutil.virtual_memory().used),
         'mem_percent': psutil.virtual_memory().percent,
-        'disk_total': format_bytes(psutil.disk_usage('/').total),
-        'disk_used': format_bytes(psutil.disk_usage('/').used),
-        'disk_percent': psutil.disk_usage('/').percent,
+        'disk_total': format_bytes(disk_usage.total),
+        'disk_used': format_bytes(disk_usage.used),
+        'disk_percent': disk_usage.percent,
+        'hdd_status': hdd_status_text,
+        'hdd_mounted': hdd_mounted,  # true ou false
+        'hdd_total': format_bytes(hdd_usage.total),
+        'hdd_used': format_bytes(hdd_usage.used),
+        'hdd_percent': hdd_usage.percent,
         'swap_total': format_bytes(psutil.swap_memory().total),
         'swap_used': format_bytes(psutil.swap_memory().used),
         'swap_percent': psutil.swap_memory().percent,
@@ -211,6 +235,14 @@ def mount_hdd():
     except Exception as e:
         print(f"Erro ao montar o HD: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao montar HD: {e}'}), 500
+
+def is_hdd_mounted(mount_point='/mnt/media'):
+    """Verifica se um ponto de montagem específico está ativo."""
+    # psutil.disk_partitions() lista todos os discos montados
+    for part in psutil.disk_partitions():
+        if part.mountpoint == mount_point:
+            return True
+    return False
 
 # Executa a aplicação
 if __name__ == '__main__':

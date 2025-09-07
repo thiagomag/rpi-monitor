@@ -119,18 +119,13 @@ def stats():
 
     hdd_mounted = is_hdd_mounted()
 
-    # Se o HD estiver montado, pegamos as estatísticas dele.
-    # Caso contrário, mostramos valores zerados.
     if hdd_mounted:
-        hdd_usage = psutil.disk_usage('/mnt/media')
+        # CORREÇÃO 2: Usar o caminho correto para obter o uso do disco
+        hdd_usage = psutil.disk_usage('/hostfs/mnt/media')
         hdd_status_text = "Conectado"
     else:
-        # Cria um objeto 'falso' se o disco não estiver montado
         class MockUsage:
-            total = 0;
-            used = 0;
-            percent = 0
-
+            total = 0; used = 0; percent = 0
         hdd_usage = MockUsage()
         hdd_status_text = "Ejetado / Desconectado"
 
@@ -148,7 +143,7 @@ def stats():
         'disk_used': format_bytes(disk_usage.used),
         'disk_percent': disk_usage.percent,
         'hdd_status': hdd_status_text,
-        'hdd_mounted': hdd_mounted,  # true ou false
+        'hdd_mounted': hdd_mounted,
         'hdd_total': format_bytes(hdd_usage.total),
         'hdd_used': format_bytes(hdd_usage.used),
         'hdd_percent': hdd_usage.percent,
@@ -236,43 +231,18 @@ def mount_hdd():
         print(f"Erro ao montar o HD: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao montar HD: {e}'}), 500
 
-def is_hdd_mounted(mount_point='/mnt/media'):
-    """Verifica se um ponto de montagem está ativo com logs de depuração detalhados."""
-    proc_path = '/hostfs/proc/mounts'
-    print("--- INICIANDO VERIFICAÇÃO DE MONTAGEM DE HD ---")
-    print(f"DEBUG: Verificando a montagem em '{mount_point}' usando o arquivo '{proc_path}'")
-
-    if not os.path.exists(proc_path):
-        print(f"FALHA CRÍTICA: O arquivo '{proc_path}' NÃO EXISTE. Verifique se o volume '-v /:/hostfs:ro' está no comando 'docker run'.")
-        return False
-
+def is_hdd_mounted(mount_point='/hostfs/mnt/media'): # <-- CORREÇÃO 1: Caminho corrigido aqui
+    """Verifica se um ponto de montagem específico está ativo lendo /proc/mounts do host."""
     try:
-        with open(proc_path, 'r') as f:
-            # Lê o conteúdo todo para os logs para podermos ver o que o container vê
-            content = f.read()
-            print("DEBUG: Conteúdo completo de /hostfs/proc/mounts:")
-            # Adiciona bordas para facilitar a leitura nos logs
-            print("=========================================")
-            print(content)
-            print("=========================================")
-
-            # Itera sobre o conteúdo lido
-            for line in content.splitlines():
+        # Aponta para o arquivo de montagens do HOST, que mapeamos para /hostfs
+        with open('/proc/mounts', 'r') as f: # Lê o /proc/mounts do próprio container
+            for line in f:
                 parts = line.split()
-                if len(parts) > 1:
-                    # Mostra cada ponto de montagem que ele encontra
-                    print(f"DEBUG: Linha encontrada, ponto de montagem: '{parts[1]}'")
-                    if parts[1] == mount_point:
-                        print(f"SUCESSO: Correspondência encontrada para '{mount_point}'")
-                        print("--- FIM DA VERIFICAÇÃO ---")
-                        return True
-    except Exception as e:
-        print(f"ERRO INESPERADO: Ocorreu uma exceção ao ler o arquivo: {e}")
-        print("--- FIM DA VERIFICAÇÃO COM ERRO ---")
+                # Verifica se o ponto de montagem mapeado do host está na lista
+                if len(parts) > 1 and parts[1] == mount_point:
+                    return True
+    except FileNotFoundError:
         return False
-
-    print(f"AVISO: Nenhuma correspondência para '{mount_point}' foi encontrada no arquivo.")
-    print("--- FIM DA VERIFICAÇÃO ---")
     return False
 
 # Executa a aplicação

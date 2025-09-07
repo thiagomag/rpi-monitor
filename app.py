@@ -237,22 +237,18 @@ def mount_hdd():
         return jsonify({'status': 'error', 'message': f'Erro ao montar HD: {e}'}), 500
 
 def is_hdd_mounted(mount_point='/mnt/media'):
-    """Verifica se um ponto de montagem específico está ativo lendo /proc/mounts."""
+    """Verifica se um ponto de montagem está ativo lendo /hostfs/proc/mounts."""
     try:
-        # Abre o arquivo do sistema que lista tudo que está montado
-        with open('/proc/mounts', 'r') as f:
-            # Lê cada linha do arquivo
+        # Aponta para o arquivo de montagens do HOST, que mapeamos para /hostfs
+        with open('/hostfs/proc/mounts', 'r') as f:
             for line in f:
-                # A linha tem o formato: <dispositivo> <ponto_de_montagem> <tipo> ...
                 parts = line.split()
-                # Verificamos se a segunda parte da linha é exatamente o nosso ponto de montagem
                 if len(parts) > 1 and parts[1] == mount_point:
-                    return True # Se encontrarmos, retornamos True e paramos a busca
+                    return True
     except FileNotFoundError:
-        # Se o arquivo não existir, algo está muito errado, mas assumimos que não está montado.
-        print("Erro: /proc/mounts não encontrado.")
+        # Este erro agora nos diz que o volume não foi mapeado corretamente no 'docker run'
+        print("ERRO: /hostfs/proc/mounts não encontrado!")
         return False
-    # Se terminarmos de ler o arquivo e não encontrarmos, retornamos False
     return False
 
 # Executa a aplicação

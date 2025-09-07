@@ -184,9 +184,9 @@ def eject_hdd():
     print("Recebido comando para ejetar o HD externo.")
 
     # Comando para parar o Jellyfin
-    stop_jellyfin_cmd = 'sudo /usr/bin/docker stop jellyfin'
+    stop_jellyfin_cmd = '/usr/bin/docker stop jellyfin'
     # Comando para desmontar o HD
-    umount_hdd_cmd = 'sudo /bin/umount /mnt/media'
+    umount_hdd_cmd = '/bin/umount /mnt/media'
 
     try:
         print("Parando o container do Jellyfin...")
@@ -210,8 +210,8 @@ def mount_hdd():
     """Monta o HD externo e inicia o container do Jellyfin."""
     print("Recebido comando para montar o HD e iniciar o Jellyfin.")
 
-    mount_cmd = 'sudo /bin/mount /mnt/media'
-    start_jellyfin_cmd = 'sudo /usr/bin/docker start jellyfin'
+    mount_cmd = '/bin/mount /mnt/media'
+    start_jellyfin_cmd = '/usr/bin/docker start jellyfin'
 
     try:
         print("Montando o HD em /mnt/media...")

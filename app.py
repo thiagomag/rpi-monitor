@@ -201,7 +201,7 @@ def mount_hdd():
     """Monta o HD externo e inicia o container do Jellyfin."""
     print("Recebido comando para montar o HD e iniciar o Jellyfin.")
     # CORREÇÃO: O comando mount precisa operar no contexto do host
-    mount_cmd = 'mount /hostfs/mnt/media'
+    mount_cmd = 'mount -a'
     start_jellyfin_cmd = 'docker start jellyfin'
     try:
         print("Montando o HD...")

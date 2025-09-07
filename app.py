@@ -177,56 +177,40 @@ def restart_pi():
     os.system('dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 "org.freedesktop.login1.Manager.Reboot" boolean:true')
     return jsonify({'status': 'success', 'message': 'Comando de reinicialização enviado.'})
 
-# NOVO ENDPOINT PARA EJETAR O HD
 @app.route('/eject-hdd', methods=['POST'])
 def eject_hdd():
     """Para o container do Jellyfin e desmonta o HD externo."""
     print("Recebido comando para ejetar o HD externo.")
-
-    # Comando para parar o Jellyfin
-    stop_jellyfin_cmd = '/usr/bin/docker stop jellyfin'
-    # Comando para desmontar o HD
-    umount_hdd_cmd = '/bin/umount /mnt/media'
-
+    stop_jellyfin_cmd = 'docker stop jellyfin'
+    # CORREÇÃO: O comando umount precisa operar no contexto do host
+    umount_hdd_cmd = 'umount /hostfs/mnt/media'
     try:
         print("Parando o container do Jellyfin...")
         os.system(stop_jellyfin_cmd)
-        # Pequena pausa para garantir que o container parou
         time.sleep(5)
-
-        print("Desmontando o HD em /mnt/media...")
+        print("Desmontando o HD...")
         os.system(umount_hdd_cmd)
-
         print("HD ejetado com sucesso.")
         return jsonify({'status': 'success', 'message': 'HD ejetado com sucesso.'})
-
     except Exception as e:
         print(f"Erro ao ejetar o HD: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao ejetar HD: {e}'}), 500
 
-# NOVO ENDPOINT PARA MONTAR O HD E INICIAR O JELLYFIN
 @app.route('/mount-hdd', methods=['POST'])
 def mount_hdd():
     """Monta o HD externo e inicia o container do Jellyfin."""
     print("Recebido comando para montar o HD e iniciar o Jellyfin.")
-
-    mount_cmd = '/bin/mount /mnt/media'
-    start_jellyfin_cmd = '/usr/bin/docker start jellyfin'
-
+    # CORREÇÃO: O comando mount precisa operar no contexto do host
+    mount_cmd = 'mount /hostfs/mnt/media'
+    start_jellyfin_cmd = 'docker start jellyfin'
     try:
-        print("Montando o HD em /mnt/media...")
-        # Primeiro, tentamos montar o HD.
+        print("Montando o HD...")
         os.system(mount_cmd)
-        # Damos um tempo para o sistema de arquivos ficar pronto.
         time.sleep(3)
-
         print("Iniciando o container do Jellyfin...")
-        # Em seguida, iniciamos o container que usa o HD.
         os.system(start_jellyfin_cmd)
-
         print("HD montado e serviço iniciado com sucesso.")
         return jsonify({'status': 'success', 'message': 'HD montado e Jellyfin iniciado.'})
-
     except Exception as e:
         print(f"Erro ao montar o HD: {e}")
         return jsonify({'status': 'error', 'message': f'Erro ao montar HD: {e}'}), 500

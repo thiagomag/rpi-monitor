@@ -8,9 +8,16 @@ FROM python:3.9-slim
 # Atualiza a lista de pacotes e instala o dbus sem instalar pacotes recomendados (para manter a imagem pequena)
 # Depois, limpa o cache do apt para reduzir o tamanho final da imagem.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends dbus && \
+    apt-get install -y ca-certificates curl gnupg && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends docker-ce-cli util-linux dbus && \
     rm -rf /var/lib/apt/lists/*
-
 # 2. Define o diretório de trabalho dentro do contêiner
 WORKDIR /app
 

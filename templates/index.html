@@ -40,6 +40,8 @@
                 <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                     <button id="restart-btn" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Reiniciar</button>
                     <button id="shutdown-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Desligar</button>
+                    <button id="eject-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Ejetar HD</button>
+                    <button id="mount-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Ligar HD</button>
                 </div>
             </div>
 
@@ -152,6 +154,27 @@
             });
         });
 
+        document.getElementById('mount-btn').addEventListener('click', () => {
+            showModal({
+                title: 'Confirmar Ativação do HD',
+                body: 'Isso irá montar o HD externo e iniciar o serviço do Jellyfin. Deseja continuar?',
+                confirmText: 'Ligar',
+                confirmClass: 'bg-green-600 hover:bg-green-700',
+                action: () => sendSimpleCommand('mount-hdd', 'Ativação do HD') // Usaremos uma função genérica
+            });
+        });
+
+        document.getElementById('eject-btn').addEventListener('click', () => {
+            showModal({
+                title: 'Confirmar Ejeção do HD',
+                body: 'Isso irá parar o Jellyfin e desmontar o HD externo para remoção segura. Deseja continuar?',
+                confirmText: 'Ejetar',
+                confirmClass: 'bg-blue-600 hover:bg-blue-700',
+                // Atualizamos o eject para usar a função genérica também
+                action: () => sendSimpleCommand('eject-hdd', 'Ejeção do HD')
+            });
+        });
+
         modalCancel.addEventListener('click', hideModal);
         modalConfirm.addEventListener('click', () => {
             if (typeof confirmAction === 'function') {
@@ -173,6 +196,25 @@
             } catch (error) {
                 // É esperado um erro de rede, pois o servidor será desligado/reiniciado
                 document.body.innerHTML = `<div class="w-full h-screen flex flex-col items-center justify-center bg-gray-900 text-white"><h1 class="text-4xl font-bold text-cyan-400">Comando de ${commandName} Enviado</h1><p class="text-gray-400 mt-4">O sistema deve responder em breve. Você pode fechar esta janela.</p></div>`;
+            }
+        }
+
+        async function sendSimpleCommand(command, commandName) {
+            modalConfirm.disabled = true;
+            modalConfirm.textContent = `Enviando...`;
+            modalCancel.disabled = true;
+
+            try {
+                const response = await fetch(command, { method: 'POST' });
+                hideModal();
+                alert(`Comando de ${commandName} enviado com sucesso!`);
+            } catch (error) {
+                console.error(`Erro ao enviar comando ${commandName}:`, error);
+                hideModal();
+                alert(`Ocorreu um erro ao enviar o comando de ${commandName}.`);
+            } finally {
+                modalConfirm.disabled = false;
+                modalCancel.disabled = false;
             }
         }
 

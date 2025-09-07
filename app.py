@@ -237,18 +237,42 @@ def mount_hdd():
         return jsonify({'status': 'error', 'message': f'Erro ao montar HD: {e}'}), 500
 
 def is_hdd_mounted(mount_point='/mnt/media'):
-    """Verifica se um ponto de montagem está ativo lendo /hostfs/proc/mounts."""
-    try:
-        # Aponta para o arquivo de montagens do HOST, que mapeamos para /hostfs
-        with open('/hostfs/proc/mounts', 'r') as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) > 1 and parts[1] == mount_point:
-                    return True
-    except FileNotFoundError:
-        # Este erro agora nos diz que o volume não foi mapeado corretamente no 'docker run'
-        print("ERRO: /hostfs/proc/mounts não encontrado!")
+    """Verifica se um ponto de montagem está ativo com logs de depuração detalhados."""
+    proc_path = '/hostfs/proc/mounts'
+    print("--- INICIANDO VERIFICAÇÃO DE MONTAGEM DE HD ---")
+    print(f"DEBUG: Verificando a montagem em '{mount_point}' usando o arquivo '{proc_path}'")
+
+    if not os.path.exists(proc_path):
+        print(f"FALHA CRÍTICA: O arquivo '{proc_path}' NÃO EXISTE. Verifique se o volume '-v /:/hostfs:ro' está no comando 'docker run'.")
         return False
+
+    try:
+        with open(proc_path, 'r') as f:
+            # Lê o conteúdo todo para os logs para podermos ver o que o container vê
+            content = f.read()
+            print("DEBUG: Conteúdo completo de /hostfs/proc/mounts:")
+            # Adiciona bordas para facilitar a leitura nos logs
+            print("=========================================")
+            print(content)
+            print("=========================================")
+
+            # Itera sobre o conteúdo lido
+            for line in content.splitlines():
+                parts = line.split()
+                if len(parts) > 1:
+                    # Mostra cada ponto de montagem que ele encontra
+                    print(f"DEBUG: Linha encontrada, ponto de montagem: '{parts[1]}'")
+                    if parts[1] == mount_point:
+                        print(f"SUCESSO: Correspondência encontrada para '{mount_point}'")
+                        print("--- FIM DA VERIFICAÇÃO ---")
+                        return True
+    except Exception as e:
+        print(f"ERRO INESPERADO: Ocorreu uma exceção ao ler o arquivo: {e}")
+        print("--- FIM DA VERIFICAÇÃO COM ERRO ---")
+        return False
+
+    print(f"AVISO: Nenhuma correspondência para '{mount_point}' foi encontrada no arquivo.")
+    print("--- FIM DA VERIFICAÇÃO ---")
     return False
 
 # Executa a aplicação
